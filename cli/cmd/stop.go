@@ -13,8 +13,12 @@ var stopCmd = &cobra.Command{
 	Short: "Stop background daemon",
 	Long:  "Stop the background daemon that polls for the active application every 10 seconds.",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Stopping tracker daemon...")
-		// TODO: Implement stop functionality
+		if stopChan != nil {
+			stopChan <- true // Signal the daemon to stop
+			fmt.Println("Daemon stop signal sent")
+		} else {
+			fmt.Println("Daemon is not running")
+		}
 	},
 }
 
