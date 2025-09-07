@@ -15,7 +15,7 @@ type Config struct {
 // If DB_PATH is not set, it logs a warning and runs in dry mode
 func Load() *Config {
 	cfg := Config{
-		DbPath:         os.Getenv("DB_PATH"), //TODO: set up env file with DB_PATH
+		DbPath:         os.Getenv("DB_PATH"),
 		PollingSeconds: 10,
 	}
 
