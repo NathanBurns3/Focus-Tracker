@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/NathanBurns3/Focus-Tracker/internal/config"
+	"github.com/NathanBurns3/Focus-Tracker/internal/db"
 )
 
 // GetActiveApp returns the name of the currently focused application on macOS.
@@ -17,25 +18,31 @@ func GetActiveApp() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	appName := strings.TrimSpace(string(out))
-	return appName, nil
+	return strings.TrimSpace(string(out)), nil
 }
 
 // StartPolling starts a ticker that runs every PollingSeconds interval
 // On each tick, it polls for the active application and listens to stopChan
 func StartPolling(cfg *config.Config, stopChan chan bool) {
+	db.Connect(cfg.DbPath)
+	defer db.Close()
+
 	ticker := time.NewTicker(time.Duration(cfg.PollingSeconds) * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <- ticker.C:
-			app, err := GetActiveApp()
+			app, err := GetActiveApp() // Poll for the active application
 			if err != nil {
 				fmt.Println("Error getting active app:", err)
 				continue
 			}
 			fmt.Println("Active application:", app)
+
+			minutes := float32(cfg.PollingSeconds) / 60.0 // Convert seconds to minutes
+
+			db.InsertAppUsage(app, minutes, "desktop") // Insert/update usage in the database
 		case <- stopChan:
 			fmt.Println("Stopping tracker daemon...")
 			return
