@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Focus Tracker Tab Logger",
+  "version": "1.0",
+  "description": "Tracks active Chrome tabs and logs time spent on each domain.",
+  "permissions": ["tabs", "storage"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "host_permissions": ["<all_urls>"]
+}
