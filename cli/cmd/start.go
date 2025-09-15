@@ -5,6 +5,7 @@ import (
 
 	"github.com/NathanBurns3/Focus-Tracker/internal/config"
 	"github.com/NathanBurns3/Focus-Tracker/internal/daemon"
+	"github.com/NathanBurns3/Focus-Tracker/internal/server"
 	"github.com/spf13/cobra"
 )
 
@@ -21,6 +22,7 @@ var startCmd = &cobra.Command{
 		fmt.Println("Starting tracker daemon...")
 		stopChan = make(chan bool)	// Channel to signal stopping the daemon
 		cfg := config.Load()		 // Load configuration
+		go server.StartServer(cfg)	// Start the server in a separate goroutine
 		daemon.StartPolling(cfg, stopChan)	// Start the polling daemon
 	},
 }
