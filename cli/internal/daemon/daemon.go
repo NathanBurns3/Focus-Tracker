@@ -42,7 +42,8 @@ func StartPolling(cfg *config.Config, stopChan chan bool) {
 
 			minutes := float32(cfg.PollingSeconds) / 60.0 // Convert seconds to minutes
 
-			db.InsertAppUsage(app, minutes, "desktop") // Insert/update usage in the database
+			aliasApp := cfg.ResolveAlias(app) // Resolve alias if exists
+			db.InsertAppUsage(aliasApp, minutes, "desktop") // Insert/update usage in the database
 		case <- stopChan:
 			fmt.Println("Stopping tracker daemon...")
 			return
