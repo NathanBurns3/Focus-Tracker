@@ -23,6 +23,33 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
   }
 });
 
+// Listen for tab removal
+chrome.tabs.onRemoved.addListener(async (tabId) => {
+  if (tabId === currentTabId) {
+    await trackTime();
+    currentTabId = null;
+    currentDomain = null;
+    startTime = null;
+  }
+});
+
+// Listen for window focus changes
+chrome.windows.onFocusChanged.addListener(async (windowId) => {
+  if (windowId === chrome.windows.WINDOW_ID_NONE) {
+    // User switched away from Chrome
+    await trackTime();
+    startTime = null;
+  } else if (currentTabId !== null) {
+    // User returned to Chrome, reset timer
+    startTime = Date.now();
+  }
+});
+
+// Listen for extension suspend (browser shutdown)
+chrome.runtime.onSuspend.addListener(async () => {
+  await trackTime();
+});
+
 // Function to calculate time spent and save it
 async function trackTime() {
   if (!currentDomain || !startTime) return;
