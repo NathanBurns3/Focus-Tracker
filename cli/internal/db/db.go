@@ -9,13 +9,20 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// UsageReport represents a single usage report entry
+type UsageReport struct {
+	Name   	string
+	Minutes float32
+	Source 	string
+}
+
 // Global database connection pool
 var pool *pgxpool.Pool
 
 // Connect establishes a connection to the PostgreSQL database
 func Connect(dbPath string) {
 	if dbPath == "" {
-		log.Println("DB_PATH not set, skipping DB connection")
+		log.Println("NEXT_PUBLIC_DB_PATH not set, skipping DB connection")
 		return // Running in dry mode, no DB connection
 	}
 
@@ -70,6 +77,35 @@ func InsertAppUsage(appName string, minutes float32, source string) {
 	if err != nil {
 		log.Println("Error updating app usage:", err)
 	}
+}
+
+// GetTodayUsage retrieves all usage records for the current day
+func GetTodayUsage() ([]UsageReport, error) {
+	if pool == nil {
+		return nil, nil
+	}
+
+	rows, err := pool.Query(context.Background(),
+		`SELECT name, minutes_used, source
+		 FROM daily_usage
+		 WHERE usage_date = CURRENT_DATE
+		 ORDER BY minutes_used DESC`,
+		)
+		
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var reports []UsageReport
+	for rows.Next() {
+		var r UsageReport
+		if err := rows.Scan(&r.Name, &r.Minutes, &r.Source); err != nil {
+			continue
+		}
+		reports = append(reports, r)
+	}
+	return reports, nil
 }
 
 // Close closes the database connection pool
