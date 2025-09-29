@@ -29,16 +29,16 @@ func LoadAliases(path string) map[string]string {
 }
 
 // Load read configuration from environment variables and returns a Config struct
-// If DB_PATH is not set, it logs a warning and runs in dry mode
+// If NEXT_PUBLIC_DB_PATH is not set, it logs a warning and runs in dry mode
 func Load() *Config {
 	cfg := Config{
-		DbPath:         os.Getenv("DB_PATH"),
+		DbPath:         os.Getenv("NEXT_PUBLIC_DB_PATH"),
 		PollingSeconds: 10,
 		Aliases:        LoadAliases("internal/config/aliases.json"),
 	}
 
 	if cfg.DbPath == "" {
-		log.Println("WARNING: DB_PATH not set, running in dry mode.")
+		log.Println("WARNING: NEXT_PUBLIC_DB_PATH not set, running in dry mode.")
 	}
 
 	return &cfg
