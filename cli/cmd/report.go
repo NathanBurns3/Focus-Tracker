@@ -12,24 +12,34 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Helper to format minutes as "Xh Ym" or just minutes (rounds fractional minutes)
+// Helper to format minutes with decimal precision
 func formatMinutes(min float32) string {
-	totalMin := int(math.Round(float64(min)))
-	h := totalMin / 60
-	m := totalMin % 60
-	if h > 0 {
-		return fmt.Sprintf("%dh %dm", h, m)
-	}
-	return fmt.Sprintf("%dm", m)
+    if min >= 60 {
+        h := int(min) / 60
+        m := min - float32(h*60)
+        return fmt.Sprintf("%dh %.1fm", h, m)
+    }
+    return fmt.Sprintf("%.1fm", min)
 }
 
 // Helper to draw ASCII bars
 func asciiBar(value float32, max float32, width int) string {
-	barLen := int((value / max) * float32(width))
-	if barLen < 1 && value > 0 {
-		barLen = 1
-	}
-	return strings.Repeat("▇", barLen)
+    if max <= 0 {
+        return ""
+    }
+
+    // Use decimal precision for better accuracy
+    percentage := float64(value) / float64(max)
+    barLen := int(math.Round(percentage * float64(width)))
+    
+    if barLen < 1 && value > 0 {
+        barLen = 1
+    }
+    if barLen > width {
+        barLen = width
+    }
+    
+    return strings.Repeat("▇", barLen)
 }
 
 // ANSI color codes
