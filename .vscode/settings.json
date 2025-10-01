@@ -1,0 +1,16 @@
+{
+  "tailwindCSS.includeLanguages": {
+    "typescript": "javascript",
+    "typescriptreact": "javascript"
+  },
+  "tailwindCSS.experimental.classRegex": [
+    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+  ],
+  "tailwindCSS.files.exclude": [
+    "**/.git/**",
+    "**/node_modules/**",
+    "**/.next/**",
+    "**/dist/**"
+  ]
+}
