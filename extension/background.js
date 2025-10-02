@@ -2,8 +2,6 @@ let currentTabId = null;
 let currentDomain = null;
 let startTime = null;
 
-const usageLogs = {}; // { domain: minutes }
-
 // Listen for tab activation
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   await trackTime(); // save previous tab's usage
@@ -55,10 +53,13 @@ async function trackTime() {
   if (!currentDomain || !startTime) return;
 
   const elapsedMinutes = (Date.now() - startTime) / 60000; // convert ms to minutes
-  usageLogs[currentDomain] = (usageLogs[currentDomain] || 0) + elapsedMinutes;
 
-  // Save logs to chrome.storage.local for periodic POSTing
-  chrome.storage.local.set({ usageLogs });
+  // Get current logs from storage, update them, and save back
+  chrome.storage.local.get("usageLogs", ({ usageLogs }) => {
+    const logs = usageLogs || {};
+    logs[currentDomain] = (logs[currentDomain] || 0) + elapsedMinutes;
+    chrome.storage.local.set({ usageLogs: logs });
+  });
 }
 
 // Utility to extract domain from URL
@@ -74,7 +75,7 @@ function extractDomain(url) {
 // Function to POST usage logs to Go server
 function postUsageLogs() {
   chrome.storage.local.get("usageLogs", ({ usageLogs }) => {
-    if (!usageLogs) return;
+    if (!usageLogs || Object.keys(usageLogs).length === 0) return;
 
     // Convert to array of {domain, minutes}
     const entries = Object.entries(usageLogs).map(([domain, minutes]) => ({
@@ -82,18 +83,19 @@ function postUsageLogs() {
       minutes,
     }));
 
+    // Clear logs BEFORE sending to prevent duplicates
+    chrome.storage.local.set({ usageLogs: {} });
+
     fetch("http://localhost:8080/usage", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(entries),
     })
       .then(() => {
-        console.log("Posting usage logs:", entries);
-        // Clear logs after successful POST
-        chrome.storage.local.set({ usageLogs: {} });
+        console.log("Posted usage logs:", entries);
       })
       .catch((err) => {
-        // Fail silently if Go server is not running
+        console.log("Failed to post usage logs (server down?)");
       });
   });
 }
