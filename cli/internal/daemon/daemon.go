@@ -43,6 +43,10 @@ func StartPolling(cfg *config.Config, stopChan chan bool) {
 			minutes := float32(cfg.PollingSeconds) / 60.0 // Convert seconds to minutes
 
 			aliasApp := cfg.ResolveAlias(app) // Resolve alias if exists
+			if aliasApp == "" {
+				fmt.Println("Skipping unknown application:", app)
+				continue
+			}
 			db.InsertAppUsage(aliasApp, minutes, "desktop") // Insert/update usage in the database
 		case <- stopChan:
 			fmt.Println("Stopping tracker daemon...")
