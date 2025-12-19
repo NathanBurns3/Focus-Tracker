@@ -51,7 +51,7 @@ func UsageHandler(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 	// Process each usage entry
 	for _, entry := range entries {
         domain := entry.Domain
-        if domain == "unknown" || domain == "newtab" {
+        if domain == "unknown" || domain == "newtab" || domain == "" || domain == "null" {
             continue
         }
 
