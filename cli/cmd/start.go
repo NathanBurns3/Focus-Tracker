@@ -13,7 +13,7 @@ import (
 var stopChan chan bool
 
 // startCmd defines the "start" command for the CLI
-// This command starts the background daemon that polls for the active application
+// This command starts the background daemon that polls for the active application and runs the server
 var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start background daemon",
