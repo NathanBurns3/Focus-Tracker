@@ -23,10 +23,16 @@ export async function GET() {
       .slice(0, 10);
 
     const result = await pool.query(
-      `SELECT name, minutes_used, source
-       FROM daily_usage
-       WHERE usage_date = $1
-       ORDER BY minutes_used DESC`,
+      `WITH ranked AS (
+         SELECT name, minutes_used, source,
+                ROW_NUMBER() OVER (PARTITION BY source ORDER BY minutes_used DESC) as rn
+         FROM daily_usage
+         WHERE usage_date = $1
+       )
+       SELECT name, minutes_used, source
+       FROM ranked
+       WHERE rn <= 10
+       ORDER BY source, minutes_used DESC`,
       [today]
     );
     return NextResponse.json(result.rows);

@@ -86,10 +86,16 @@ func GetTodayUsage() ([]UsageReport, error) {
 	}
 
 	rows, err := pool.Query(context.Background(),
-		`SELECT name, minutes_used, source
-		 FROM daily_usage
-		 WHERE usage_date = CURRENT_DATE
-		 ORDER BY minutes_used DESC`,
+		`WITH ranked AS (
+		   SELECT name, minutes_used, source,
+		          ROW_NUMBER() OVER (PARTITION BY source ORDER BY minutes_used DESC) as rn
+		   FROM daily_usage
+		   WHERE usage_date = CURRENT_DATE
+		 )
+		 SELECT name, minutes_used, source
+		 FROM ranked
+		 WHERE rn <= 10
+		 ORDER BY source, minutes_used DESC`,
 		)
 		
 	if err != nil {
