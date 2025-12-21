@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"log"
+	"os/exec"
 
 	"github.com/spf13/cobra"
 )
@@ -18,6 +20,13 @@ var stopCmd = &cobra.Command{
 			fmt.Println("Daemon stop signal sent")
 		} else {
 			fmt.Println("Daemon is not running")
+		}
+
+		// Stop Docker Desktop
+		fmt.Println("Stopping Docker Desktop...")
+		dockerCmd := exec.Command("osascript", "-e", `quit app "Docker"`)
+		if err := dockerCmd.Run(); err != nil {
+			log.Printf("Warning: Failed to stop Docker Desktop: %v", err)
 		}
 	},
 }

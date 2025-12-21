@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"log"
+	"os/exec"
 
 	"github.com/NathanBurns3/Focus-Tracker/internal/config"
 	"github.com/NathanBurns3/Focus-Tracker/internal/daemon"
@@ -19,6 +21,13 @@ var startCmd = &cobra.Command{
 	Short: "Start background daemon",
 	Long:  "Start the background daemon that polls for the active application every 10 seconds.",
 	Run: func(cmd *cobra.Command, args []string) {
+		// Start Docker Desktop
+		fmt.Println("Starting Docker Desktop...")
+		dockerCmd := exec.Command("open", "-a", "Docker")
+		if err := dockerCmd.Run(); err != nil {
+			log.Printf("Warning: Failed to start Docker Desktop: %v", err)
+		}
+
 		fmt.Println("Starting tracker daemon...")
 		stopChan = make(chan bool)	// Channel to signal stopping the daemon
 		cfg := config.Load()		 // Load configuration
