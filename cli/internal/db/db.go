@@ -34,6 +34,11 @@ func Connect(dbPath string) {
 		return
 	}
 
+	// Align session time zone to local
+    if _, err := pool.Exec(context.Background(), "SET TIME ZONE 'America/New_York'"); err != nil {
+        log.Printf("Warning: failed to set time zone: %v", err)
+    }
+
 	fmt.Println("Connected to PostgreSQL database!")
 }
 
@@ -86,22 +91,22 @@ func GetTodayUsage() ([]UsageReport, error) {
 	}
 
 	rows, err := pool.Query(context.Background(),
-		`WITH ranked AS (
-		   SELECT name, minutes_used, source,
-		          ROW_NUMBER() OVER (PARTITION BY source ORDER BY minutes_used DESC) as rn
-		   FROM daily_usage
-		   WHERE usage_date = CURRENT_DATE
-		 )
-		 SELECT name, minutes_used, source
-		 FROM ranked
-		 WHERE rn <= 10
-		 ORDER BY source, minutes_used DESC`,
-		)
-		
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+    	`WITH ranked AS (
+           SELECT name, minutes_used, source,
+                  ROW_NUMBER() OVER (PARTITION BY source ORDER BY minutes_used DESC) as rn
+           FROM daily_usage
+           WHERE usage_date::date = CURRENT_DATE
+         )
+         SELECT name, minutes_used, source
+         FROM ranked
+         WHERE rn <= 10
+         ORDER BY source, minutes_used DESC`,
+    )
+	
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
 
 	var reports []UsageReport
 	for rows.Next() {
