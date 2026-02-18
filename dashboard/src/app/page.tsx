@@ -1,103 +1,86 @@
-import Image from "next/image";
+"use client";
+
+import UsageChart from "@/components/UsageChart";
+import { useEffect, useState } from "react";
+
+interface Usage {
+  name: string;
+  minutes_used: number;
+  source: string;
+}
+
+type ChartType = "bar" | "line" | "pie";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [usageData, setUsageData] = useState<Usage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [chartType, setChartType] = useState<ChartType>("bar");
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    fetch("/api/usage")
+      .then((res) => res.json())
+      .then((data) => setUsageData(data))
+      .catch((err) => console.error("Failed to fetch usage data:", err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const chartTypes: { value: ChartType; label: string }[] = [
+    { value: "bar", label: "Bar" },
+    { value: "line", label: "Line" },
+    { value: "pie", label: "Pie" },
+  ];
+
+  return (
+    <main className="min-h-screen bg-gray-900 p-6 sm:p-8 lg:p-12">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8 lg:mb-12">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-3 text-white">
+            Focus Tracker
+          </h1>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+
+        {/* Chart Type Selector */}
+        <div className="flex justify-center mb-8">
+          <div className="inline-flex items-center gap-2 p-1.5 bg-gray-800 rounded-2xl shadow-lg ring-1 ring-gray-700">
+            {chartTypes.map((type) => (
+              <button
+                key={type.value}
+                onClick={() => setChartType(type.value)}
+                className={`
+                  px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200
+                  flex items-center gap-2
+                  ${
+                    chartType === type.value
+                      ? "bg-blue-600 text-white shadow-md"
+                      : "text-gray-400 hover:bg-gray-700 hover:text-white"
+                  }
+                `}
+              >
+                <span>{type.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Content */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-700 border-t-blue-500 mb-4"></div>
+            <p className="text-gray-400 text-sm">Loading your data...</p>
+          </div>
+        ) : usageData.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">📊</div>
+            <p className="text-gray-400 text-lg">No data found for today.</p>
+            <p className="text-gray-500 text-sm mt-2">
+              Start tracking to see your productivity insights!
+            </p>
+          </div>
+        ) : (
+          <UsageChart data={usageData} chartType={chartType} />
+        )}
+      </div>
+    </main>
   );
 }
