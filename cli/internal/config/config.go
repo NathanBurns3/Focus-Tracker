@@ -2,9 +2,9 @@ package config
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 // Config holds the configuration values for the application
@@ -14,18 +14,47 @@ type Config struct {
 	Aliases   		map[string]string // Map of application name aliases
 }
 
-// LoadAliases reads the aliases from a JSON file and returns a map
-func LoadAliases(path string) map[string]string {
-	aliases := make(map[string]string)
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Println("No alias file found, continuing without aliases")
+// LoadAliasesFromCandidates tries each path and returns the first parsed aliases map.
+func LoadAliasesFromCandidates(paths []string) map[string]string {
+	for _, path := range paths {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+
+		aliases := make(map[string]string)
+		if err := json.Unmarshal(data, &aliases); err != nil {
+			log.Println("Error parsing alias file:", err)
+			return aliases
+		}
 		return aliases
 	}
-	if err := json.Unmarshal(data, &aliases); err != nil {
-		log.Println("Error parsing alias file:", err)
+
+	log.Println("No alias file found, continuing without aliases")
+	return make(map[string]string)
+}
+
+func aliasCandidates() []string {
+	var candidates []string
+	if aliasPath := os.Getenv("FOCUS_TRACKER_ALIASES_PATH"); aliasPath != "" {
+		candidates = append(candidates, aliasPath)
 	}
-	return aliases
+
+	if envPath := os.Getenv("FOCUS_TRACKER_ENV_PATH"); envPath != "" {
+		candidates = append(candidates,
+			filepath.Join(filepath.Dir(envPath), "cli", "internal", "config", "aliases.json"),
+		)
+	}
+
+	candidates = append(candidates, "internal/config/aliases.json")
+	if configDir, err := os.UserConfigDir(); err == nil {
+		candidates = append(candidates, filepath.Join(configDir, "focus-tracker", "aliases.json"))
+	}
+	if homeDir, err := os.UserHomeDir(); err == nil {
+		candidates = append(candidates, filepath.Join(homeDir, ".focus-tracker.aliases.json"))
+	}
+
+	return candidates
 }
 
 // Load read configuration from environment variables and returns a Config struct
@@ -34,7 +63,7 @@ func Load() *Config {
 	cfg := Config{
 		DbPath:         os.Getenv("NEXT_PUBLIC_DB_PATH"),
 		PollingSeconds: 10,
-		Aliases:        LoadAliases("internal/config/aliases.json"),
+		Aliases:        LoadAliasesFromCandidates(aliasCandidates()),
 	}
 
 	if cfg.DbPath == "" {
