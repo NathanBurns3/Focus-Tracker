@@ -3,16 +3,12 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
+	"time"
 
-	"github.com/NathanBurns3/Focus-Tracker/internal/config"
-	"github.com/NathanBurns3/Focus-Tracker/internal/daemon"
-	"github.com/NathanBurns3/Focus-Tracker/internal/server"
 	"github.com/spf13/cobra"
 )
-
-// Channel to signal stopping the daemon
-var stopChan chan bool
 
 // startCmd defines the "start" command for the CLI
 // This command starts the background daemon that polls for the active application and runs the server
@@ -28,15 +24,30 @@ var startCmd = &cobra.Command{
 			log.Printf("Warning: Failed to start Docker Desktop: %v", err)
 		}
 
-		fmt.Println("Starting tracker daemon...")
-		stopChan = make(chan bool)	// Channel to signal stopping the daemon
-		cfg := config.Load()		 // Load configuration
-		go server.StartServer(cfg)	// Start the server in a separate goroutine
-		daemon.StartPolling(cfg, stopChan)	// Start the polling daemon
+		// Give Docker a moment to start
+        fmt.Println("Waiting for Docker to initialize...")
+        time.Sleep(3 * time.Second)
+
+        fmt.Println("Starting Focus Tracker daemon...")
+        
+        plistPath := os.ExpandEnv("$HOME/Library/LaunchAgents/com.focustracker.daemon.plist")
+        
+        // Load the service (if not already loaded)
+        loadCmd := exec.Command("launchctl", "load", plistPath)
+        loadCmd.Run() // Ignore error if already loaded
+        
+        // Start the service
+        startCmd := exec.Command("launchctl", "start", "com.focustracker.daemon")
+        if err := startCmd.Run(); err != nil {
+            log.Fatalf("Failed to start daemon: %v\nMake sure you've run 'focus-tracker install' first", err)
+        }
+        
+        fmt.Println("✓ Daemon started and running in background")
+        fmt.Println("  View logs: tail -f /tmp/focustracker.out.log")
+        fmt.Println("  Stop with: focus-tracker stop")
 	},
 }
 
-// init registers the startCmd with the root command
 func init() {
 	rootCmd.AddCommand(startCmd)
 }
